@@ -89,13 +89,15 @@ class _InfiniteListScreenState extends State<InfiniteListScreen> {
                     : Text('No more items'),
               );
             }
-            return ListTile(
-              leading: CachedNetworkImage(
-                imageUrl: _items[index]['download_url'],
-                placeholder: (context, url) => CircularProgressIndicator(),
-                errorWidget: (context, url, error) => Icon(Icons.error),
+            return Row(
+              children: [
+                Image.network(
+                "https://picsum.photos/id/$index/100/100",
+                width: 100,
+                height: 100
               ),
-              title: Text('Image by ${_items[index]['author']}'),
+              Text('Image by ${_items[index]['author']}'),
+              ],
             );
           },
         ),
