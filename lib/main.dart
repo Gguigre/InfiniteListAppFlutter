@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async'; // Import nécessaire pour utiliser Timer
 
 void main() {
   runApp(MyApp());
@@ -30,13 +30,23 @@ class _InfiniteListScreenState extends State<InfiniteListScreen> {
   int _page = 1;
   final int _maxItems = 1000;
   final Dio _dio = Dio();
+  final ScrollController _scrollController = ScrollController();
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchMoreData();
+      _startAutoScroll();
     });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchMoreData() async {
@@ -65,6 +75,21 @@ class _InfiniteListScreenState extends State<InfiniteListScreen> {
     }
   }
 
+  void _startAutoScroll() {
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      if (_scrollController.position.pixels <
+          _scrollController.position.maxScrollExtent) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(seconds: 1),
+          curve: Curves.easeInOut,
+        );
+      } else if (!_isLoading) {
+        _fetchMoreData();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,6 +105,7 @@ class _InfiniteListScreenState extends State<InfiniteListScreen> {
           return false;
         },
         child: ListView.builder(
+          controller: _scrollController,
           itemCount: _items.length + 1,
           itemBuilder: (context, index) {
             if (index == _items.length) {
@@ -91,12 +117,9 @@ class _InfiniteListScreenState extends State<InfiniteListScreen> {
             }
             return Row(
               children: [
-                Image.network(
-                "https://picsum.photos/id/$index/100/100",
-                width: 100,
-                height: 100
-              ),
-              Text('Image by ${_items[index]['author']}'),
+                Image.network("https://picsum.photos/id/$index/100/100",
+                    width: 100, height: 100),
+                Text('Image by ${_items[index]['author']}'),
               ],
             );
           },
